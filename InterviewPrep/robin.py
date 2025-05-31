@@ -829,3 +829,17 @@ def word_break(s, wordDict):
         dp[i] = True
         break
   return dp[-1]
+
+def extract_unique_ticker(logs):
+  '''
+  log = "2022-01-01 BUY AAPL 100;2022-01-02 SELL TSLA 50;2022-01-03 BUY AAPL 20;2022-01-04 BUY GOOG 10"
+  '''
+  ticker_set = set()
+  log_list = logs.split(";")
+  for log in log_list:
+    segment = log.split(" ")
+    ticker_set.add(segment[2])
+  
+  return sorted(list(ticker_set))
+
+extract_unique_ticker("2022-01-01 BUY AAPL 100;2022-01-02 SELL TSLA 50;2022-01-03 BUY AAPL 20;2022-01-04 BUY GOOG 10")
