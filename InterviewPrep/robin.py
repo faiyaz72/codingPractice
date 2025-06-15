@@ -842,4 +842,75 @@ def extract_unique_ticker(logs):
   
   return sorted(list(ticker_set))
 
-extract_unique_ticker("2022-01-01 BUY AAPL 100;2022-01-02 SELL TSLA 50;2022-01-03 BUY AAPL 20;2022-01-04 BUY GOOG 10")
+def num_unique_path(m: int, n: int):
+  dp = [[1] * n for _ in range(m)]
+  for i in range(1, m):
+    for j in range(1,n):
+      dp[i][j] = dp[i-1][j] + dp[i][j-1]
+  return dp[m-1][n-1]
+
+def minimal_path_sum(grid: list[list[int]]):
+  rows = len(grid)
+  columns = len(grid[0])
+
+  dp = [[0] * columns for _ in range(rows)]
+  dp[0][0] = grid[0][0]
+
+  for m in range(1, columns):
+    dp[0][m] = dp[0][m-1] + grid[0][m]
+  
+  for n in range(1, rows):
+    dp[n][0] = dp[n-1][0] + grid[n][0]
+  
+  for m in range(1, rows):
+    for n in range(1, columns):
+      dp[m][n] = min(dp[m-1][n], dp[m][n-1]) + grid[m][n]
+
+  return dp[rows-1][columns-1]
+
+def minimum_total(triangle: list[list[int]]) -> int:
+  rows = len(triangle)
+  last_row_columns = len(triangle[rows-1])
+
+  dp = []
+  for i in range(rows):
+    row = []
+    for j in range(len(triangle[i])):
+      row.append(0)
+    dp.append(row)
+
+  # base case, deal with last row
+  for i in range(last_row_columns):
+    dp[rows-1][i] = triangle[rows-1][i]
+
+  for i in range(rows - 2, -1, -1):
+    for j in range(0,len(triangle[i])):
+      dp[i][j] = min(dp[i + 1][j], dp[i + 1][j + 1]) + triangle[i][j]
+  
+  return dp[0][0]
+
+def longest_increasing_sub(nums):
+  if not nums:
+    return 0
+
+  dp = [0] * len(nums)
+  dp[0] = 1
+
+  for i in range(1, len(nums)):
+    if (nums[i] > nums[i-1]):
+      dp[i] = dp[i-1] + 1
+    else:
+      dp[i] = dp[i-1]
+  
+  return dp[len(nums) - 1]
+
+print(longest_increasing_sub([1, 2, 3, 4, 5]))         # Expected: 5 (strictly increasing)
+print(longest_increasing_sub([5, 4, 3, 2, 1]))         # Expected: 1 (strictly decreasing)
+print(longest_increasing_sub([7, 7, 7, 7]))            # Expected: 1 (all elements equal)
+print(longest_increasing_sub([10, 9, 2, 5, 3, 7, 101, 18]))  # Expected: 4
+print(longest_increasing_sub([1]))                     # Expected: 1 (single element)
+print(longest_increasing_sub([1, 2]))                  # Expected: 2 (two elements, increasing)
+print(longest_increasing_sub([2, 1]))                  # Expected: 1 (two elements, decreasing)
+print(longest_increasing_sub([1, 3, 2, 4, 3, 5]))      # Expected: 3
+print(longest_increasing_sub([1, 2, 2, 3, 4, 1, 5]))   # Expected: 4
+print(longest_increasing_sub([]))                      # Edge case: empty list, will raise IndexError

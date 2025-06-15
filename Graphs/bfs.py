@@ -1,5 +1,5 @@
 from typing import List
-from collections import deque
+from collections import defaultdict, deque
 
 
 class Node:
@@ -302,10 +302,99 @@ def minimum_knight_moves(n, start, target):
                     queue.append(neighbour)
         distance += 1
     return -1
+
+def task_scheduling(tasks: list[str], requirements: list[list[str]]) -> list[str]:
+
+    def buildGraph(requirements: list[list[str]], tasks):
+        graph = defaultdict(list)
+        for segment in requirements:
+            graph[segment[0]].append(segment[1]) 
+        
+        for node in tasks:
+            if node not in graph:
+                graph[node] = []
+        return graph
+
+    def buildIndgree(graph):
+        result = {node: 0 for node in graph}
+        for node in graph:
+            for child in graph[node]:
+                result[child] += 1
+        return result
+
+
+    graph = buildGraph(requirements, tasks)
+    in_degree = buildIndgree(graph)
+
+    res = []
+    queue = deque()
+    for node in in_degree:
+        if in_degree[node] == 0:
+            queue.append(node)
+    while queue:
+        node = queue.popleft()
+        res.append(node)
+        for child in graph[node]:
+            in_degree[child] -= 1
+            if in_degree[child] == 0:
+                queue.append(child)
+
+    return res
+
+def task_scheduling_2(tasks: list[str], times: list[int], requirements: list[list[str]]) -> int:
+    def buildGraph(requirements: list[list[str]], tasks):
+        graph = defaultdict(list)
+        for segment in requirements:
+            graph[segment[0]].append(segment[1]) 
+        
+        for node in tasks:
+            if node not in graph:
+                graph[node] = []
+        return graph
+
+    def buildIndgree(graph):
+        result = {node: 0 for node in graph}
+        for node in graph:
+            for child in graph[node]:
+                result[child] += 1
+        return result
     
+    def buildTimeMap(tasks, times):
+        result = defaultdict(int)
+        for i in range(len(tasks)):
+            result[tasks[i]] = times[i]
+        return result
+    
+    graph = buildGraph(requirements, tasks)
+    in_degree = buildIndgree(graph)
+    time_map = buildTimeMap(tasks, times)
 
+    result = 0
+    queue = deque()
+    start = {node: 0 for node in tasks}
+    for node in in_degree:
+            if in_degree[node] == 0:
+                queue.append(node)
+                start[node] = time_map[node]
+                result = max(result, time_map[node])
+    while queue:
+        node = queue.popleft()
+        for child in graph[node]:
+            in_degree[child] -= 1
+            start[child] = max(start[child], start[node] + time_map[child])
+            result = max(start[child], result)
+            if in_degree[child] == 0:
+                queue.append(child)
+    
+    return result
 
+tasks = ["a", "b", "c", "d", "e", "f"]
+times = [5, 5, 3, 2, 2, 1]
+requirements = [["a", "d"], ["b", "d"], ["c", "e"], ["d", "f"], ["e", "f"]]
 
+print(task_scheduling_2(tasks, times, requirements))
+
+    
 
 
 # this function builds a tree from input; you don't have to modify it
