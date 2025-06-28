@@ -751,3 +751,42 @@ def maximumRootToLeaf(root):
     dfs(root, 0)
     return maximum[0]
 
+def word_exist(board, word):
+    row = len(board)
+    column = len(board[0])
+
+    def getNeighbour(i, j, index):
+        directions = [(0,1), (1,0), (0,-1), (-1,0)]
+        result = []
+        for dx,dy in directions:
+            nx, ny = i + dx, j + dy
+            if 0 <= nx < row and 0 <= ny < column and board[nx][ny] != "#":
+                result.append((nx, ny))
+        return result
+
+    def dfs_search(i, j, index):
+        if index == len(word):
+            return True
+        if board[i][j] != word[index]:
+            return False
+        if index > len(word):
+            return False
+        temp = board[i][j]
+        board[i][j] = "#"
+        for neighbour in getNeighbour(i, j, index):
+            # getNeighbour returns list of valid and their cordinate
+            nx, ny = neighbour
+            if (board[nx][ny] != word[index]):
+                continue
+            if (dfs_search(nx, ny, index + 1)):
+                return True
+            
+        board[i][j] = temp
+        return False
+
+
+    for i in range(row):
+        for j in range(column):
+            if (dfs_search(i, j, 0)):
+                return True
+    return False

@@ -1,3 +1,4 @@
+import heapq
 from typing import List
 from collections import defaultdict, deque
 
@@ -392,9 +393,206 @@ tasks = ["a", "b", "c", "d", "e", "f"]
 times = [5, 5, 3, 2, 2, 1]
 requirements = [["a", "d"], ["b", "d"], ["c", "e"], ["d", "f"], ["e", "f"]]
 
-print(task_scheduling_2(tasks, times, requirements))
 
+def service_outage(deps, failed):
+
+    def buildMatrix(deps):
+        result = {}
+        for segment in deps:
+            first_split = segment.split("=")
+            result[first_split[0]] = []
+            if len(first_split) > 1:
+                for value in first_split[1].split("|"):
+                    if value != '':
+                        result[first_split[0]].append(value)
+        return result
     
+    adjacency_matrix = buildMatrix(deps)
+
+    def bfs(start, adjacency_matrix):
+        child_list = []
+        queue = deque([start])
+        visited = set()
+        visited.add(start)
+
+        while len(queue) > 0:
+            for _ in range(len(queue)):
+                node = queue.popleft()
+                for child in adjacency_matrix[node]:
+                    if child not in visited:
+                        queue.append(child)
+                        visited.add(child)
+                        child_list.append(child)
+        return child_list
+
+    def max_depth_dfs(node, adjacency_matrix, visited):
+        max_depth = 0
+        for child in adjacency_matrix.get(node, []):
+            if child not in visited:
+                visited.add(child)
+                depth = 1 + max_depth_dfs(child, adjacency_matrix, visited)
+                max_depth = max(max_depth, depth)
+                visited.remove(child)  # Allow other paths to use this node (since it's a DAG, not a tree)
+        return max_depth
+
+
+    child_process = bfs(failed, adjacency_matrix)
+    dept = max_depth_dfs(failed, adjacency_matrix, set([failed]))
+
+    return (child_process, dept)
+
+
+def num_steps(target_combo: str, trapped_combos: List[str]) -> int:
+    queue = deque(["0000"])
+    visited = set(["0000"])
+    distance = 1
+
+    def add(node, i):
+        temp = node    
+        result = int(temp[i]) + 1
+        if result > 9:
+            result = 0
+        temp[i] = str(result)
+        return "".join(temp)
+    
+    def substract(node, i):
+        temp = node
+        result = int(temp[i]) - 1
+        if result < 0:
+            result = 9
+        temp[i] = str(result)
+        return "".join(temp)
+
+    def getNeighbour(node):
+        result = []
+        for i in range(4):
+            afterAdd = add(list(node), i)
+            afterSubstract = substract(list(node),i)
+            result.append(afterAdd)
+            result.append(afterSubstract)
+        
+        return result
+
+    while len(queue) > 0:
+        num_nodes = len(queue)
+        for _ in range(num_nodes):
+            node = queue.popleft()
+            for child in getNeighbour(node):
+                if child == target_combo:
+                    return distance
+                if child in trapped_combos:
+                    continue
+                if child not in visited:
+                    visited.add(child)
+                    queue.append(child)
+        distance += 1
+
+    return -1
+
+
+def num_of_islands(grid: list[list[int]]) -> int:
+
+    def getNeighbour(i,j):
+        directions = [(0,1), (1,0), (0,-1), (-1,0)]
+        result = []
+        for dx, dy in directions:
+            nx, ny = i + dx, j + dy
+            if 0 <= nx < len(grid) and 0 <= ny < len(grid[0]) and grid[nx][ny] == 1:
+                result.append((nx,ny))
+        return result
+
+    def bfs(i,j):
+        queue = deque([(i,j)])
+        while len(queue) > 0:
+            node = queue.popleft()
+            for neighbour in getNeighbour(node[0],node[1]):
+                grid[neighbour[0]][neighbour[1]] = -1
+                queue.append((neighbour[0],neighbour[1]))
+
+
+    result = 0
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            if grid[i][j] == 1:
+                result += 1
+                grid[i][j] = -1
+                bfs(i,j)
+    return result
+
+
+def data_propogation(network, start):
+
+    def buildMap(network):
+        result = {}
+        for segment in network:
+            first_split = segment.split("=")
+            key = first_split[0]
+            result[key] = []
+            values = first_split[1]
+            if values != '':
+                second_split = values.split("|")
+                for value in second_split:
+                    third_split = value.split(":")
+                    result[key].append((int(third_split[1]),third_split[0]))
+        return result
+
+
+    adjacency_map = buildMap(network)
+    # A: [(B,5), (C,3)]
+
+    time_map = {}
+    heap = [(0, start)]
+
+    while heap:
+        time, node = heapq.heappop(heap)
+        if node in time_map:
+            continue
+        time_map[node] = time
+        for child in adjacency_map[node]:
+            # child is of type (5,B)
+            heapq.heappush(heap, (time + child[0], child[1]))
+
+    return time_map
+
+
+def network_ttl(edges, start, ttl):
+
+    def buildGraph(edges):
+        result = defaultdict(list)
+        for src, dst in edges:
+            result[src].append(dst)
+            result[dst].append(src)
+        return result
+
+
+    graph = buildGraph(edges)
+    level = 0
+    queue = deque([start])
+    visited = set([start])
+
+    node_list = []
+    while queue and level <= ttl:
+        num_nodes = len(queue)
+        for _ in range(num_nodes):
+            node = queue.popleft()
+            node_list.append(node)
+            for child in graph[node]:
+                if child not in visited:
+                    visited.add(child)
+                    queue.append(child)
+        level += 1
+    return sorted(node_list)
+
+edges = [
+    ("A", "B"),
+    ("A", "C"),
+    ("B", "D"),
+    ("C", "E"),
+    ("D", "F")
+]
+start = "A"
+ttl = 2
+print(network_ttl(edges, start, ttl))
 
 
 # this function builds a tree from input; you don't have to modify it
@@ -412,3 +610,32 @@ if __name__ == "__main__":
     res = level_order_traversal(root)
     for row in res:
         print(" ".join(map(str, row)))
+
+def test_data_propogation():
+    # Test 1: Example from your code
+    network1 = ["A=B:5|C:3", "B=D:2", "C=D:4", "D="]
+    start1 = "A"
+    print("Test 1:", data_propogation(network1, start1))  # Expected: {'A': 0, 'B': 5, 'C': 3, 'D': 7}
+
+    # Test 2: Disconnected node
+    network2 = ["A=B:2", "B=C:2", "C=", "D="]
+    start2 = "A"
+    print("Test 2:", data_propogation(network2, start2))  # Expected: {'A': 0, 'B': 2, 'C': 4, 'D': inf} (D unreachable)
+
+    # Test 3: Multiple paths, choose shortest
+    network3 = ["A=B:1|C:5", "B=C:1", "C="]
+    start3 = "A"
+    print("Test 3:", data_propogation(network3, start3))  # Expected: {'A': 0, 'B': 1, 'C': 2}
+
+    # Test 4: Single node
+    network4 = ["A="]
+    start4 = "A"
+    print("Test 4:", data_propogation(network4, start4))  # Expected: {'A': 0}
+
+    # Test 5: Cycle in network
+    network5 = ["A=B:1", "B=C:1", "C=A:1"]
+    start5 = "A"
+    print("Test 5:", data_propogation(network5, start5))  # Expected: {'A': 0, 'B': 1, 'C': 2}
+
+if __name__ == "__main__":
+    test_data_propogation()
