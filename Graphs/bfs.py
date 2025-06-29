@@ -583,16 +583,81 @@ def network_ttl(edges, start, ttl):
         level += 1
     return sorted(node_list)
 
-edges = [
-    ("A", "B"),
-    ("A", "C"),
-    ("B", "D"),
-    ("C", "E"),
-    ("D", "F")
-]
-start = "A"
-ttl = 2
-print(network_ttl(edges, start, ttl))
+def shipping_route(routes, start, end, blocked_ports):
+
+    def buildGraph(routes):
+        graph = {}
+        for segment in routes:
+            firstSplit = segment.split("=")
+            key = firstSplit[0]
+            values = firstSplit[1]
+            graph[key] = []
+
+            if values != '':
+                secondSplit = values.split("|")
+                for value in secondSplit:
+                    thirdSplit = value.split(":")
+                    graph[key].append((int(thirdSplit[1]), thirdSplit[0]))
+        return graph
+
+    graph = buildGraph(routes)
+    # {A: [(4,B), (2,C)]}
+    queue = []
+    visited = {}
+    heapq.heappush(queue, (0,start, [start]))
+    while queue:
+        time, port, path = heapq.heappop(queue)
+        if port in visited and visited[port] <= time:
+            continue
+        if port in blocked_ports:
+            continue
+        visited[port] = time
+        if port == end:
+            return (path, time)
+        for child in graph[port]:
+            childTime, childPort = child
+            childPath = path[:]
+            childPath.append(childPort)
+            heapq.heappush(queue, (childTime + time, childPort, childPath))
+    
+    return ([], -1)
+
+
+def hazard_route(roads, start, end, hazard_zones):
+    def buildGraph(routes):
+        graph = {}
+        for segment in routes:
+            firstSplit = segment.split("=")
+            key = firstSplit[0]
+            values = firstSplit[1]
+            graph[key] = []
+
+            if values != '':
+                secondSplit = values.split("|")
+                for value in secondSplit:
+                    thirdSplit = value.split(":")
+                    graph[key].append((int(thirdSplit[1]), thirdSplit[0]))
+        return graph
+
+    graph = buildGraph(roads)
+    queue = []
+    visited = {}
+    heapq.heappush(queue, (0, start, [start]))
+    
+    while queue:
+        time, road, path = heapq.heappop(queue)
+        if road in visited and visited[road] <= time:
+            continue
+        visited[road] = time
+        if road == end:
+            return (path, time)
+        if road in hazard_zones and road != start:
+            continue
+        for childTime, childRoad in graph[road]:
+            heapq.heappush(queue, (time + childTime, childRoad, path + [childRoad]))
+    
+    return ([], -1)
+        
 
 
 # this function builds a tree from input; you don't have to modify it
@@ -605,37 +670,20 @@ def build_tree(nodes, f):
     right = build_tree(nodes, f)
     return Node(f(val), left, right)
 
-if __name__ == "__main__":
-    root = build_tree(iter(input().split()), int)
-    res = level_order_traversal(root)
-    for row in res:
-        print(" ".join(map(str, row)))
-
 def test_data_propogation():
     # Test 1: Example from your code
-    network1 = ["A=B:5|C:3", "B=D:2", "C=D:4", "D="]
-    start1 = "A"
-    print("Test 1:", data_propogation(network1, start1))  # Expected: {'A': 0, 'B': 5, 'C': 3, 'D': 7}
-
-    # Test 2: Disconnected node
-    network2 = ["A=B:2", "B=C:2", "C=", "D="]
-    start2 = "A"
-    print("Test 2:", data_propogation(network2, start2))  # Expected: {'A': 0, 'B': 2, 'C': 4, 'D': inf} (D unreachable)
-
-    # Test 3: Multiple paths, choose shortest
-    network3 = ["A=B:1|C:5", "B=C:1", "C="]
-    start3 = "A"
-    print("Test 3:", data_propogation(network3, start3))  # Expected: {'A': 0, 'B': 1, 'C': 2}
-
-    # Test 4: Single node
-    network4 = ["A="]
-    start4 = "A"
-    print("Test 4:", data_propogation(network4, start4))  # Expected: {'A': 0}
-
-    # Test 5: Cycle in network
-    network5 = ["A=B:1", "B=C:1", "C=A:1"]
-    start5 = "A"
-    print("Test 5:", data_propogation(network5, start5))  # Expected: {'A': 0, 'B': 1, 'C': 2}
+    roads = [
+        "A=B:4|C:2",
+        "B=D:3|E:6",
+        "C=D:2|F:5",
+        "D=E:1",
+        "E=F:2",
+        "F="
+    ]
+    start = "A"
+    end = "F"
+    hazard_zones = ["C", "D"]
+    print(hazard_route(roads, start, end, hazard_zones))
 
 if __name__ == "__main__":
     test_data_propogation()
